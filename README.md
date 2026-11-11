@@ -35,7 +35,7 @@ Abrir http://localhost:5500 para el catálogo, http://localhost:5500/productos.h
 
 ## Pruebas y entrega
 
-**Pendiente:** incorporar `api/probar_api.py` original y los materiales auxiliares que están incluidos en el ZIP de entrega. No se ha verificado aquí el requisito de 128/128 pruebas, por lo que este repositorio no debe considerarse todavía la entrega final.
+Se incluye el archivo original `api/probar_api.py` (comprobado idéntico al del ZIP de entrega), que contiene la suite de 128 pruebas. **Pendiente de verificar:** correr `python probar_api.py` en una computadora con `sqlmodel` instalado y confirmar **128/128**. En el entorno de preparación no fue posible instalar esa dependencia.
 
 El video obligatorio dura entre 5 y 10 minutos y debe demostrar creación real en la base de datos, validaciones, filtro y paginado, errores y CORS.
 

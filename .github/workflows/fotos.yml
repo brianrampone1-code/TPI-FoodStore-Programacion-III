@@ -1,0 +1,35 @@
+name: Incorporar fotos gourmet
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/descargar_imagenes.py
+      - .github/workflows/fotos.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fotos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar Pillow
+        run: python -m pip install pillow
+      - name: Descargar y optimizar fotos gourmet
+        run: python scripts/descargar_imagenes.py
+      - name: Publicar las imágenes en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/img/*.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Agregar fotos gourmet optimizadas en WebP"
+            git push
+          fi

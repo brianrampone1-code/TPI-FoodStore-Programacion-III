@@ -437,3 +437,210 @@ def parte_7_estados():
          lambda j: j["estado"] == "EN_PREPARACION")
     http(P, "no se vuelve a PENDIENTE: 409", cambiar(uno, "PENDIENTE"), 409)
     http(P, "EN_PREPARACION a ENTREGADO: 200", cambiar(uno, "ENTREGADO"), 200,
+         lambda j: j["estado"] == "ENTREGADO")
+    http(P, "ENTREGADO es terminal: no se cancela (409)", cambiar(uno, "CANCELADO"), 409)
+    comprobar(P, "el 409 no devolvió stock", lambda: stock_de(pizza) == 18)
+
+    dos = nuevo_pedido()
+    http(P, "PENDIENTE no salta a ENTREGADO: 409", cambiar(dos, "ENTREGADO"), 409)
+    comprobar(P, "antes de cancelar el stock está descontado", lambda: stock_de(pizza) == 16)
+    http(P, "PENDIENTE a CANCELADO: 200", cambiar(dos, "CANCELADO"), 200,
+         lambda j: j["estado"] == "CANCELADO")
+    comprobar(P, "cancelar devuelve el stock", lambda: stock_de(pizza) == 18,
+              f"stock actual: {stock_de(pizza)}")
+    http(P, "CANCELADO es terminal: 409", cambiar(dos, "EN_PREPARACION"), 409)
+    comprobar(P, "cancelar no devuelve el stock dos veces", lambda: stock_de(pizza) == 18)
+
+    tres = nuevo_pedido(3)
+    cambiar(tres, "EN_PREPARACION")
+    http(P, "EN_PREPARACION también se puede cancelar", cambiar(tres, "CANCELADO"), 200)
+    comprobar(P, "y devuelve el stock", lambda: stock_de(pizza) == 18)
+
+    http(P, "estado inválido: 422", cambiar(uno, "PERDIDO"), 422)
+    http(P, "cambiar el estado de un pedido inexistente: 404", cambiar(999, "CANCELADO"), 404)
+
+    nuevo_pedido(1)
+    http(P, "estado filtra el listado", client.get(PEDIDOS, params={"estado": "CANCELADO"}), 200,
+         lambda j: j["total"] == 2 and all(x["estado"] == "CANCELADO" for x in j["items"]))
+    http(P, "estado inválido en el filtro: 422", client.get(PEDIDOS, params={"estado": "PERDIDO"}), 422)
+    http(P, "GET /pedidos/resumen cuenta por estado", client.get(f"{PEDIDOS}resumen"), 200,
+         lambda j: (j["pendientes"], j["en_preparacion"], j["entregados"], j["cancelados"]) == (1, 0, 1, 2))
+    http(P, "ingresos_entregados suma solo los ENTREGADO", client.get(f"{PEDIDOS}resumen"), 200,
+         lambda j: abs(j["ingresos_entregados"] - 2000) < 0.01)
+
+
+def parte_8_datos_y_diseno():
+    print("\n=== PARTE 8: datos de ejemplo y capas ===")
+    P = "P8"
+
+    def texto(nombre):
+        return (CARPETA / nombre).read_text(encoding="utf-8")
+
+    def sin_comentarios(fuente):
+        return re.sub(r"#.*", "", re.sub(r'""".*?"""', "", fuente, flags=re.S))
+
+    def routers():
+        return [sin_comentarios(r.read_text(encoding="utf-8")) for r in CARPETA.glob("router*.py")]
+
+    comprobar(P, "hay routers (router*.py) y service.py",
+              lambda: routers() and (CARPETA / "service.py").exists())
+    comprobar(P, "ningún router llama a commit", lambda: not any(".commit(" in r for r in routers()))
+    comprobar(P, "service.py no conoce HTTP (ni fastapi ni HTTPException)",
+              lambda: not re.search(r"fastapi|HTTPException", sin_comentarios(texto("service.py"))))
+    comprobar(P, "service.py usa selectinload para traer las relaciones",
+              lambda: "selectinload" in texto("service.py"))
+    comprobar(P, "models.py declara Relationship y link_model",
+              lambda: "Relationship" in texto("models.py") and "link_model" in texto("models.py"))
+
+    def cargar_seed():
+        import service
+        engine = bd_nueva()
+        with Session(engine) as session:
+            service.cargar_datos_de_ejemplo(session)
+        with Session(engine) as session:
+            service.cargar_datos_de_ejemplo(session)   # la segunda vez no tiene que duplicar
+
+    try:
+        cargar_seed()
+        cargo, error = True, ""
+    except Exception as e:  # noqa: BLE001
+        cargo, error = False, repr(e)
+    registrar(P, "service.cargar_datos_de_ejemplo(session) corre dos veces sin errores", cargo, error)
+    productos = {"total": 0, "items": []}
+    if cargo:
+        try:
+            respuesta = client.get(PRODUCTOS, params={"limit": 50}).json()
+            productos = respuesta if isinstance(respuesta, dict) else productos
+        except Exception:  # noqa: BLE001
+            pass
+    comprobar(P, "los datos de ejemplo traen al menos 12 productos",
+              lambda: productos["total"] >= 12, f"hay {productos.get('total')}")
+    comprobar(P, "al menos 4 categorías y 3 etiquetas",
+              lambda: cargo and len(client.get(CATEGORIAS).json()) >= 4
+              and len(client.get(ETIQUETAS).json()) >= 3)
+    comprobar(P, "hay productos con etiquetas y alguno con stock 0",
+              lambda: any(x["etiquetas"] for x in productos["items"])
+              and any(x["stock"] == 0 for x in productos["items"]))
+    comprobar(P, "hay productos con imagen_url",
+              lambda: any(x["imagen_url"] for x in productos["items"]))
+
+
+# ----------------------------------------------------------------------
+# Herramientas para el video: trabajan sobre la base REAL del proyecto
+# ----------------------------------------------------------------------
+def foto_de_la_base() -> dict:
+    """Lee directo de la base con SQL, sin pasar por la API."""
+    with database.engine.connect() as conexion:
+        pedidos = conexion.execute(text("SELECT COUNT(*) FROM pedido")).scalar()
+        lineas = conexion.execute(text("SELECT COUNT(*) FROM detallepedido")).scalar()
+        stock = conexion.execute(text("SELECT id, nombre, stock FROM producto ORDER BY id")).all()
+    return {"pedidos": pedidos, "lineas": lineas, "stock": {i: (n, s) for i, n, s in stock}}
+
+
+def preparar_base() -> None:
+    import service
+    database.crear_tablas()
+    with Session(database.engine) as session:
+        service.cargar_datos_de_ejemplo(session)
+
+
+def nombre_de_la_base() -> str:
+    url = database.engine.url
+    motor = url.get_backend_name()
+    return f"SQLite, archivo {url.database}" if motor == "sqlite" else f"{motor}, base {url.database}"
+
+
+def ver_base() -> None:
+    preparar_base()
+    foto = foto_de_la_base()
+    print(f"\nBase: {nombre_de_la_base()}")
+    print(f"Pedidos guardados: {foto['pedidos']}   Líneas guardadas: {foto['lineas']}")
+    print("\nStock de los productos:")
+    for producto_id, (nombre, stock) in foto["stock"].items():
+        print(f"  {producto_id:>3}  {nombre:<32} {stock}")
+    with database.engine.connect() as conexion:
+        ultimos = conexion.execute(text(
+            "SELECT id, cliente_nombre, estado, total FROM pedido ORDER BY id DESC LIMIT 5")).all()
+        print("\nÚltimos pedidos:" if ultimos else "\nTodavía no hay pedidos.")
+        for pedido_id, cliente, estado, total in ultimos:
+            print(f"  N.º {pedido_id}  {cliente}  {estado}  total {total}")
+            lineas = conexion.execute(text(
+                "SELECT nombre_producto, cantidad, precio_unitario, subtotal FROM detallepedido "
+                "WHERE pedido_id = :id"), {"id": pedido_id}).all()
+            for nombre, cantidad, precio, subtotal in lineas:
+                print(f"       {cantidad} x {nombre} a {precio} = {subtotal}")
+
+
+def demostrar_caso(titulo: str, cuerpo: dict, falla: bool) -> bool:
+    print(f"\n--- {titulo} ---")
+    antes = foto_de_la_base()
+    print(f"Antes:   {antes['pedidos']} pedidos, {antes['lineas']} líneas")
+    if falla:
+        with falla_en_segunda_linea():
+            respuesta = client.post(PEDIDOS, json=cuerpo)
+    else:
+        respuesta = client.post(PEDIDOS, json=cuerpo)
+    print(f"La API respondió {respuesta.status_code}: {respuesta.text[:120]}")
+    despues = foto_de_la_base()
+    print(f"Después: {despues['pedidos']} pedidos, {despues['lineas']} líneas")
+    igual = antes == despues and respuesta.status_code != 201
+    print("[ OK ] No se guardó nada: ni pedido, ni líneas, ni cambios de stock." if igual
+          else "[FALLA] Quedaron datos en la base: el pedido no es todo o nada.")
+    return igual
+
+
+def demostrar_transaccion() -> None:
+    preparar_base()
+    con_stock = [(i, s) for i, (_, s) in foto_de_la_base()["stock"].items() if s > 0]
+    if len(con_stock) < 2:
+        sys.exit("Hacen falta al menos dos productos con stock en la base.")
+    (uno, _), (dos, stock_dos) = con_stock[:2]
+    print(f"\nBase: {nombre_de_la_base()}")
+    print("Se manda un pedido de dos líneas que se corta en la mitad. Nada tiene que quedar guardado.")
+    casos = [
+        demostrar_caso("Caso 1: falla simulada al guardar la segunda línea",
+                       pedido_body((uno, 1), (dos, 1)), falla=True),
+        demostrar_caso("Caso 2: la segunda línea pide más stock del que hay",
+                       pedido_body((uno, 1), (dos, stock_dos + 1)), falla=False),
+    ]
+    print("\nComprobalo con: python probar_api.py --ver-base")
+    sys.exit(0 if all(casos) else 1)
+
+
+# ----------------------------------------------------------------------
+def main() -> None:
+    if "--ver-base" in sys.argv:
+        ver_base()
+        return
+    if "--transaccion" in sys.argv:
+        demostrar_transaccion()
+        return
+
+    partes = [parte_1_modelos, parte_2_categorias, parte_3_etiquetas, parte_4_productos,
+              parte_5_etiquetas_de_producto, parte_6_pedidos, parte_7_estados,
+              parte_8_datos_y_diseno]
+    for parte in partes:
+        try:
+            parte()
+        except Exception as error:  # noqa: BLE001 -- una parte rota no frena a las demás
+            registrar(parte.__name__, "la parte se interrumpió", False, repr(error))
+
+    app.dependency_overrides.clear()
+    for engine in ENGINES:
+        engine.dispose()
+
+    print("\n=== RESUMEN ===")
+    for clave in sorted({p for p, _ in resultados}):
+        de_la_parte = [ok for p, ok in resultados if p == clave]
+        print(f"  {clave}: {sum(de_la_parte)}/{len(de_la_parte)}")
+    aprobadas = sum(ok for _, ok in resultados)
+    print(f"\nPruebas superadas: {aprobadas}/{len(resultados)}")
+    if aprobadas == len(resultados):
+        print("Pasaron todas. Falta revisar que puedas explicar tu código en el video.")
+    else:
+        print("Todavía hay pruebas por resolver: leé el mensaje de cada [FALLA].")
+    sys.exit(0 if aprobadas == len(resultados) else 1)
+
+
+if __name__ == "__main__":
+    main()

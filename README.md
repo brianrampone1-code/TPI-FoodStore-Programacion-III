@@ -6,6 +6,8 @@ Proyecto HTML, CSS y JavaScript conectado con una API de productos, categorías,
 
 ## Ejecutar
 
+Descargá el repositorio con **Code → Download ZIP**, extraelo y abrí la carpeta interior del proyecto en Visual Studio Code.
+
 **Terminal 1 — API**
 ```powershell
 cd api
@@ -19,9 +21,13 @@ cd web
 py -m http.server 5500
 ```
 
-Abrir http://localhost:5500 para el catálogo, http://localhost:5500/productos.html para el listado y formulario de alta, y http://127.0.0.1:8000/docs para la documentación de API.
+Abrir:
+- [Catálogo](http://localhost:5500)
+- [Listado paginado](http://localhost:5500/productos.html)
+- [Nuevo producto](http://localhost:5500/nuevo-producto.html)
+- [Swagger de la API](http://127.0.0.1:8000/docs)
 
-**No abrir con doble clic**: los módulos ES deben servirse por HTTP. CORS permite solamente los orígenes de la web en el puerto 5500.
+**No abrir el HTML con doble clic**: los módulos ES deben servirse por HTTP. CORS permite solamente los orígenes de la web en el puerto 5500.
 
 ## Funcionalidades
 
@@ -29,16 +35,39 @@ Abrir http://localhost:5500 para el catálogo, http://localhost:5500/productos.h
 - Categorías consultadas desde `GET /categorias/` y filtro remoto con `categoria_id`.
 - Carga, lista vacía, error y botón Reintentar.
 - Tabla de administración con paginado real por `skip` y `limit`.
-- Alta de productos con `POST /productos/` y validaciones HTML, JavaScript y servidor.
+- **Formulario de alta en página independiente** con `POST /productos/` y validaciones HTML, JavaScript y servidor (409, 404 y 422).
+- Después de un alta exitosa, redirección con el ID y recarga de la lista desde la API.
+- Imágenes gourmet locales optimizadas en **WebP** dentro de `web/img/`. Los 28 productos iniciales tienen asociada una fotografía; algunas variantes comparten imagen. Las fotos del repositorio provienen de Unsplash y son distintas de las imágenes generadas para el ZIP local.
 - Interfaz responsive, módulos JavaScript y textos creados mediante `textContent`.
-- 28 productos iniciales, distribuidos en cuatro categorías.
+
+## Si ya habías ejecutado una versión anterior
+
+La base `api/foodstore.db` no se incluye en GitHub (y **no hay que borrarla**). Si ya tenías productos cargados, para actualizar sus imágenes sin perder productos, precios ni stock, ejecutá **una vez**, desde la carpeta `api`:
+
+```powershell
+py actualizar_imagenes.py
+```
+
+Después recargá el catálogo con **Ctrl + F5**. Si descargás el proyecto de cero, la API inicializa automáticamente los 28 productos con las fotos nuevas.
 
 ## Pruebas y entrega
 
-Se incluye el archivo original `api/probar_api.py` (comprobado idéntico al del ZIP de entrega). **Resultado confirmado: 128/128 pruebas superadas** con GitHub Actions, en Python 3.11 y dependencias instaladas desde `api/requirements.txt`. El workflow se encuentra en `.github/workflows/tests.yml` y se ejecuta automáticamente en cada push a `main`.
+La suite original `api/probar_api.py` permanece en el repositorio. **Resultado confirmado: 128/128 pruebas superadas** en GitHub Actions, con Python 3.11 y dependencias de `api/requirements.txt`. El workflow está en `.github/workflows/tests.yml`.
 
-[Ver ejecución exitosa de las 128 pruebas](https://github.com/brianrampone1-code/TPI-FoodStore-Programacion-III/actions/runs/43116907427).
+Para verificar localmente:
 
-El video obligatorio dura entre 5 y 10 minutos y debe demostrar creación real en la base de datos, validaciones, filtro y paginado, errores y CORS.
+```powershell
+cd api
+py probar_api.py
+py probar_api.py --ver-base
+```
 
-GitHub Pages publica sitios estáticos pero no ejecuta una API Python ni una base de datos SQLite.
+[Ver una ejecución exitosa de las 128 pruebas](https://github.com/brianrampone1-code/TPI-FoodStore-Programacion-III/actions/runs/43123562985).
+
+El video de defensa obligatorio dura entre 5 y 10 minutos y debe demostrar un alta real en la base de datos, las tres capas de validación, filtro y paginado, errores y CORS.
+
+GitHub Pages publica sitios estáticos pero no ejecuta una API Python ni una base SQLite. Para probar la aplicación completa, mantené encendidos ambos servidores.
+
+## Créditos de imágenes
+
+Fotografías gastronómicas de [Unsplash](https://unsplash.com), descargadas y optimizadas para el proyecto mediante `scripts/descargar_imagenes.py`.

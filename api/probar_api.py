@@ -217,3 +217,223 @@ def parte_2_categorias():
     http(P, "una categoría dada de baja conserva su nombre: 409",
          client.post(CATEGORIAS, json={"nombre": "Bebidas"}), 409)
 
+def parte_3_etiquetas():
+    print("\n=== PARTE 3: etiquetas ===")
+    P = "P3"
+    bd_nueva()
+    r = client.post(ETIQUETAS, json={"nombre": "Vegetariano"})
+    http(P, "POST crea una etiqueta (201)", r, 201, lambda j: j["id"] > 0)
+    et = id_de(r)
+    http(P, "POST con nombre repetido: 409",
+         client.post(ETIQUETAS, json={"nombre": "vegetariano"}), 409)
+    http(P, "POST con nombre de 1 letra: 422", client.post(ETIQUETAS, json={"nombre": "V"}), 422)
+    http(P, "GET lista las etiquetas", client.get(ETIQUETAS), 200, lambda j: len(j) == 1)
+    prod = producto(categoria())
+    client.post(f"{PRODUCTOS}{prod}/etiquetas/{et}")
+    http(P, "DELETE de una etiqueta en uso: 409", client.delete(f"{ETIQUETAS}{et}"), 409)
+    libre = id_de(client.post(ETIQUETAS, json={"nombre": "Picante"}))
+    sin_cuerpo(P, "DELETE de una etiqueta libre: 204 sin cuerpo", client.delete(f"{ETIQUETAS}{libre}"))
+    http(P, "DELETE de un id inexistente: 404", client.delete(f"{ETIQUETAS}999"), 404)
+
+
+def parte_4_productos():
+    print("\n=== PARTE 4: productos ===")
+    P = "P4"
+    bd_nueva()
+    pizzas, bebidas = categoria("Pizzas"), categoria("Bebidas")
+    base = {"nombre": "Pizza fugazza", "precio": 9000, "stock": 5, "categoria_id": pizzas,
+            "descripcion": "Con cebolla", "imagen_url": "img/fugazza.jpg"}
+    r = client.post(PRODUCTOS, json=base)
+    http(P, "POST crea un producto (201) con su categoría y etiquetas", r, 201,
+         lambda j: j["id"] > 0 and j["activo"] is True and j["categoria"]["id"] == pizzas
+         and j["etiquetas"] == [] and j["imagen_url"] == "img/fugazza.jpg")
+    fugazza = id_de(r)
+    http(P, "imagen_url es opcional", client.post(PRODUCTOS, json={
+        "nombre": "Agua mineral", "precio": 1500, "stock": 0, "categoria_id": bebidas}), 201,
+        lambda j: j["imagen_url"] is None)
+    http(P, "POST con nombre repetido en otras mayúsculas: 409",
+         client.post(PRODUCTOS, json={**base, "nombre": "PIZZA FUGAZZA"}), 409)
+    http(P, "POST con categoría inexistente: 404",
+         client.post(PRODUCTOS, json={**base, "nombre": "Otra pizza", "categoria_id": 999}), 404)
+    http(P, "POST con precio 0: 422",
+         client.post(PRODUCTOS, json={**base, "nombre": "Otra pizza", "precio": 0}), 422)
+    http(P, "POST con stock negativo: 422",
+         client.post(PRODUCTOS, json={**base, "nombre": "Otra pizza", "stock": -1}), 422)
+    http(P, "POST con nombre de 2 letras: 422",
+         client.post(PRODUCTOS, json={**base, "nombre": "Pi"}), 422)
+    inactiva = categoria("Postres")
+    client.delete(f"{CATEGORIAS}{inactiva}")
+    http(P, "POST en una categoría dada de baja: 404",
+         client.post(PRODUCTOS, json={**base, "nombre": "Flan", "categoria_id": inactiva}), 404)
+
+    http(P, "GET /{id} trae categoría y etiquetas", client.get(f"{PRODUCTOS}{fugazza}"), 200,
+         lambda j: j["categoria"]["nombre"] == "Pizzas" and "etiquetas" in j)
+    http(P, "GET /{id} inexistente: 404", client.get(f"{PRODUCTOS}999"), 404)
+    http(P, "PATCH cambia solo lo enviado", client.patch(f"{PRODUCTOS}{fugazza}", json={"precio": 9500}),
+         200, lambda j: j["precio"] == 9500 and j["stock"] == 5 and j["nombre"] == "Pizza fugazza")
+    http(P, "PATCH a una categoría inexistente: 404",
+         client.patch(f"{PRODUCTOS}{fugazza}", json={"categoria_id": 999}), 404)
+    http(P, "PATCH con el nombre de otro producto: 409",
+         client.patch(f"{PRODUCTOS}{fugazza}", json={"nombre": "Agua mineral"}), 409)
+    http(P, "PATCH con precio negativo: 422",
+         client.patch(f"{PRODUCTOS}{fugazza}", json={"precio": -5}), 422)
+    http(P, "PATCH de un id inexistente: 404", client.patch(f"{PRODUCTOS}999", json={"stock": 1}), 404)
+
+    # Listado: 12 productos en total para probar la paginación
+    for numero in range(10):
+        producto(pizzas, nombre=f"Pizza especial {numero:02d}", stock=numero)
+    http(P, "GET devuelve total e items, 10 por defecto", client.get(PRODUCTOS), 200,
+         lambda j: j["total"] == 12 and len(j["items"]) == 10)
+    http(P, "cada item trae su categoría", client.get(PRODUCTOS), 200,
+         lambda j: all("categoria" in x and "etiquetas" in x for x in j["items"]))
+    http(P, "skip y limit paginan sin cambiar el total", client.get(PRODUCTOS, params={"skip": 10, "limit": 5}),
+         200, lambda j: j["total"] == 12 and len(j["items"]) == 2)
+    http(P, "limit mayor a 50: 422", client.get(PRODUCTOS, params={"limit": 51}), 422)
+    http(P, "skip negativo: 422", client.get(PRODUCTOS, params={"skip": -1}), 422)
+    http(P, "los items vienen ordenados por id", client.get(PRODUCTOS, params={"limit": 50}), 200,
+         lambda j: [x["id"] for x in j["items"]] == sorted(x["id"] for x in j["items"]))
+    http(P, "q busca en el nombre sin distinguir mayúsculas", client.get(PRODUCTOS, params={"q": "FUGAZZA"}),
+         200, lambda j: j["total"] == 1)
+    http(P, "q busca también en la descripción", client.get(PRODUCTOS, params={"q": "cebolla"}),
+         200, lambda j: j["total"] == 1 and j["items"][0]["id"] == fugazza)
+    http(P, "categoria_id filtra y el total respeta el filtro",
+         client.get(PRODUCTOS, params={"categoria_id": bebidas}), 200,
+         lambda j: j["total"] == 1 and j["items"][0]["nombre"] == "Agua mineral")
+    http(P, "solo_con_stock deja afuera a los de stock 0",
+         client.get(PRODUCTOS, params={"solo_con_stock": True, "limit": 50}), 200,
+         lambda j: j["total"] == 10 and all(x["stock"] > 0 for x in j["items"]))
+    http(P, "los filtros se combinan", client.get(PRODUCTOS, params={"q": "especial", "categoria_id": bebidas}),
+         200, lambda j: j["total"] == 0 and j["items"] == [])
+    http(P, "DELETE hace baja lógica (200, activo false)", client.delete(f"{PRODUCTOS}{fugazza}"), 200,
+         lambda j: j["activo"] is False)
+    http(P, "el producto dado de baja no se lista y baja el total", client.get(PRODUCTOS, params={"limit": 50}),
+         200, lambda j: j["total"] == 11 and fugazza not in [x["id"] for x in j["items"]])
+    http(P, "DELETE de uno ya dado de baja: 409", client.delete(f"{PRODUCTOS}{fugazza}"), 409)
+    http(P, "DELETE de un id inexistente: 404", client.delete(f"{PRODUCTOS}999"), 404)
+    http(P, "un producto dado de baja conserva su nombre: 409",
+         client.post(PRODUCTOS, json={**base, "nombre": "Pizza fugazza"}), 409)
+    http(P, "GET de la categoría trae sus productos", client.get(f"{CATEGORIAS}{bebidas}"), 200,
+         lambda j: [x["nombre"] for x in j["productos"]] == ["Agua mineral"])
+
+
+def parte_5_etiquetas_de_producto():
+    print("\n=== PARTE 5: relación N a N entre productos y etiquetas ===")
+    P = "P5"
+    bd_nueva()
+    cat = categoria()
+    uno, dos = producto(cat, nombre="Pizza vegana"), producto(cat, nombre="Pizza de jamón")
+    veg = id_de(client.post(ETIQUETAS, json={"nombre": "Vegetariano"}))
+    tacc = id_de(client.post(ETIQUETAS, json={"nombre": "Sin TACC"}))
+    http(P, "POST asocia una etiqueta (201) y devuelve el producto",
+         client.post(f"{PRODUCTOS}{uno}/etiquetas/{veg}"), 201,
+         lambda j: [e["nombre"] for e in j["etiquetas"]] == ["Vegetariano"])
+    http(P, "se pueden asociar varias etiquetas", client.post(f"{PRODUCTOS}{uno}/etiquetas/{tacc}"), 201,
+         lambda j: len(j["etiquetas"]) == 2)
+    http(P, "asociar dos veces la misma: 409", client.post(f"{PRODUCTOS}{uno}/etiquetas/{veg}"), 409)
+    http(P, "asociar a un producto inexistente: 404", client.post(f"{PRODUCTOS}999/etiquetas/{veg}"), 404)
+    http(P, "asociar una etiqueta inexistente: 404", client.post(f"{PRODUCTOS}{uno}/etiquetas/999"), 404)
+    client.post(f"{PRODUCTOS}{dos}/etiquetas/{tacc}")
+    http(P, "etiqueta_id filtra el listado", client.get(PRODUCTOS, params={"etiqueta_id": veg}), 200,
+         lambda j: j["total"] == 1 and j["items"][0]["id"] == uno)
+    http(P, "una etiqueta puede estar en varios productos",
+         client.get(PRODUCTOS, params={"etiqueta_id": tacc}), 200, lambda j: j["total"] == 2)
+    sin_cuerpo(P, "DELETE quita la etiqueta: 204 sin cuerpo",
+               client.delete(f"{PRODUCTOS}{uno}/etiquetas/{veg}"))
+    http(P, "el producto ya no la tiene", client.get(f"{PRODUCTOS}{uno}"), 200,
+         lambda j: [e["nombre"] for e in j["etiquetas"]] == ["Sin TACC"])
+    http(P, "quitar una que no tiene: 404", client.delete(f"{PRODUCTOS}{uno}/etiquetas/{veg}"), 404)
+
+
+def parte_6_pedidos():
+    print("\n=== PARTE 6: crear y consultar pedidos ===")
+    P = "P6"
+    bd_nueva()
+    cat = categoria()
+    pizza = producto(cat, nombre="Pizza muzzarella", precio=1000.5, stock=10)
+    empanada = producto(cat, nombre="Empanada", precio=500, stock=3)
+    baja = producto(cat, nombre="Pizza vieja", stock=5)
+    client.delete(f"{PRODUCTOS}{baja}")
+
+    r = client.post(PEDIDOS, json=pedido_body((pizza, 2), (empanada, 1), notas="Sin sal"))
+    http(P, "POST crea el pedido (201) en estado PENDIENTE", r, 201,
+         lambda j: j["id"] > 0 and j["estado"] == "PENDIENTE" and j["notas"] == "Sin sal"
+         and j["forma_pago"] == "EFECTIVO")
+    pedido = r.json() if r.status_code == 201 else {"id": 999, "total": None, "detalles": []}
+    comprobar(P, "el total lo calcula la API (subtotal = precio x cantidad)",
+              lambda: abs(pedido["total"] - 2501.0) < 0.01, f"total recibido: {pedido.get('total')}")
+    comprobar(P, "cada línea trae copia de nombre, precio, cantidad y subtotal",
+              lambda: {"Pizza muzzarella", "Empanada"} == {d.get("nombre_producto") for d in pedido["detalles"]}
+              and all(abs(d["subtotal"] - d["precio_unitario"] * d["cantidad"]) < 0.01
+                      for d in pedido["detalles"]))
+    comprobar(P, "el stock se descontó", lambda: stock_de(pizza) == 8 and stock_de(empanada) == 2)
+    http(P, "el total que manda el cliente se ignora",
+         client.post(PEDIDOS, json=pedido_body((pizza, 1), total=1)), 201,
+         lambda j: abs(j["total"] - 1000.5) < 0.01)
+
+    client.patch(f"{PRODUCTOS}{pizza}", json={"precio": 9999, "nombre": "Pizza renombrada"})
+    http(P, "cambiar el producto no modifica los pedidos hechos", client.get(f"{PEDIDOS}{pedido['id']}"), 200,
+         lambda j: any(d["nombre_producto"] == "Pizza muzzarella" and d["precio_unitario"] == 1000.5
+                       for d in j["detalles"]) and abs(j["total"] - 2501.0) < 0.01)
+
+    stock_antes = stock_de(pizza), stock_de(empanada)
+    http(P, "stock insuficiente: 409",
+         client.post(PEDIDOS, json=pedido_body((pizza, 1), (empanada, 99))), 409)
+    comprobar(P, "TODO O NADA: tras el 409 no cambió ningún stock",
+              lambda: (stock_de(pizza), stock_de(empanada)) == stock_antes,
+              "se descontó una línea aunque otra falló: validá todo antes de modificar")
+    pedidos_antes = client.get(PEDIDOS).json().get("total")
+    with falla_en_segunda_linea():
+        cortado = client.post(PEDIDOS, json=pedido_body((pizza, 1), (empanada, 1)))
+    comprobar(P, "TRANSACCIÓN: con una falla en la segunda línea, el pedido no se confirma",
+              lambda: cortado.status_code != 201, f"llegó {cortado.status_code}")
+    comprobar(P, "TRANSACCIÓN: tras la falla no quedó ningún pedido guardado",
+              lambda: client.get(PEDIDOS).json().get("total") == pedidos_antes,
+              "quedó un pedido a medias: stock, pedido y líneas van en un solo commit")
+    comprobar(P, "TRANSACCIÓN: tras la falla no cambió ningún stock",
+              lambda: (stock_de(pizza), stock_de(empanada)) == stock_antes,
+              "se confirmó parte del stock: stock, pedido y líneas van en un solo commit")
+    http(P, "producto inexistente: 404", client.post(PEDIDOS, json=pedido_body((pizza, 1), (999, 1))), 404)
+    comprobar(P, "TODO O NADA: tras el 404 no cambió ningún stock",
+              lambda: (stock_de(pizza), stock_de(empanada)) == stock_antes)
+    http(P, "producto dado de baja: 404", client.post(PEDIDOS, json=pedido_body((baja, 1))), 404)
+    http(P, "producto repetido en el pedido: 409",
+         client.post(PEDIDOS, json=pedido_body((pizza, 1), (pizza, 1))), 409)
+    http(P, "pedido sin líneas: 422", client.post(PEDIDOS, json=pedido_body()), 422)
+    http(P, "cantidad 0: 422", client.post(PEDIDOS, json=pedido_body((pizza, 0))), 422)
+    http(P, "forma de pago inválida: 422",
+         client.post(PEDIDOS, json=pedido_body((pizza, 1), forma_pago="TARJETA")), 422)
+    http(P, "dirección de menos de 5 caracteres: 422",
+         client.post(PEDIDOS, json=pedido_body((pizza, 1), direccion_entrega="Abc")), 422)
+    http(P, "falta el nombre del cliente: 422", client.post(PEDIDOS, json={
+        "direccion_entrega": "San Martín 1234", "forma_pago": "EFECTIVO",
+        "detalles": [{"producto_id": pizza, "cantidad": 1}]}), 422)
+    comprobar(P, "los pedidos rechazados no quedaron guardados",
+              lambda: client.get(PEDIDOS).json()["total"] == 2,
+              f"{client.get(PEDIDOS).text[:120]}")
+
+    http(P, "GET devuelve total e items, los últimos primero", client.get(PEDIDOS), 200,
+         lambda j: j["total"] == 2 and j["items"][0]["id"] > j["items"][1]["id"]
+         and len(j["items"][0]["detalles"]) >= 1)
+    http(P, "skip y limit paginan los pedidos", client.get(PEDIDOS, params={"skip": 1, "limit": 1}), 200,
+         lambda j: j["total"] == 2 and len(j["items"]) == 1)
+    http(P, "GET /{id} inexistente: 404", client.get(f"{PEDIDOS}999"), 404)
+
+
+def parte_7_estados():
+    print("\n=== PARTE 7: estados del pedido y resumen ===")
+    P = "P7"
+    bd_nueva()
+    cat = categoria()
+    pizza = producto(cat, precio=1000, stock=20)
+
+    def nuevo_pedido(cantidad=2):
+        return id_de(client.post(PEDIDOS, json=pedido_body((pizza, cantidad))))
+
+    def cambiar(pedido, estado):
+        return client.patch(f"{PEDIDOS}{pedido}/estado", json={"estado": estado})
+
+    uno = nuevo_pedido()
+    http(P, "PENDIENTE a EN_PREPARACION: 200", cambiar(uno, "EN_PREPARACION"), 200,
+         lambda j: j["estado"] == "EN_PREPARACION")
+    http(P, "no se vuelve a PENDIENTE: 409", cambiar(uno, "PENDIENTE"), 409)
+    http(P, "EN_PREPARACION a ENTREGADO: 200", cambiar(uno, "ENTREGADO"), 200,

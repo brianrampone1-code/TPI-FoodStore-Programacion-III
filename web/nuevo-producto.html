@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nuevo producto · Food Store</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="shell">
+    <a class="brand" href="index.html">food<span>store.</span></a>
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="index.html">Catálogo</a>
+      <a href="productos.html" aria-current="page">Gestión de productos</a>
+    </nav>
+  </div>
+</header>
+<main class="shell page-main page-narrow">
+  <div class="heading">
+    <div>
+      <p class="eyebrow">Alta de producto</p>
+      <h1>Agregar nuevo producto</h1>
+      <p>Completá los campos de <strong>ProductoCreate</strong>. La imagen se envía como texto y la categoría se carga desde la API.</p>
+    </div>
+    <a class="btn btn-secondary" href="productos.html">Volver a la lista</a>
+  </div>
+  <section class="panel" aria-labelledby="nuevo-titulo">
+    <h2 id="nuevo-titulo">Formulario de alta</h2>
+    <p class="panel-text">Con validación HTML, JavaScript y API. Si el guardado sale bien, volvés a la lista con el producto ya disponible.</p>
+    <div id="estado-form" aria-live="polite"></div>
+    <form id="form-producto">
+      <div class="form-grid">
+        <div class="wide">
+          <label for="nombre">Nombre *</label>
+          <input class="field" id="nombre" name="nombre" type="text" required minlength="3" maxlength="60" placeholder="Ej. Pizza con champiñones">
+          <div class="error-field" id="error-nombre" aria-live="polite"></div>
+        </div>
+        <div class="wide">
+          <label for="descripcion">Descripción</label>
+          <textarea class="field" id="descripcion" name="descripcion" maxlength="200" rows="3" placeholder="Describí el producto"></textarea>
+          <div class="error-field" id="error-descripcion" aria-live="polite"></div>
+        </div>
+        <div>
+          <label for="precio">Precio ($) *</label>
+          <input class="field" id="precio" name="precio" type="number" required min="0.01" step="0.01" placeholder="9900">
+          <div class="error-field" id="error-precio" aria-live="polite"></div>
+        </div>
+        <div>
+          <label for="stock">Stock *</label>
+          <input class="field" id="stock" name="stock" type="number" required min="0" step="1" value="0">
+          <div class="error-field" id="error-stock" aria-live="polite"></div>
+        </div>
+        <div>
+          <label for="categoria_id">Categoría *</label>
+          <select class="field" id="categoria_id" name="categoria_id" required>
+            <option value="">Seleccioná una categoría</option>
+          </select>
+          <div class="error-field" id="error-categoria_id" aria-live="polite"></div>
+        </div>
+        <div>
+          <label for="imagen_url">URL de imagen (opcional)</label>
+          <input class="field" id="imagen_url" name="imagen_url" type="text" maxlength="255" placeholder="img/pizza-margherita.webp o https://...">
+          <span class="help">Se envía una ruta de texto, no un archivo.</span>
+          <div class="error-field" id="error-imagen_url" aria-live="polite"></div>
+        </div>
+        <div class="wide form-actions">
+          <button type="submit" id="guardar" class="btn">Guardar producto</button>
+          <a class="btn btn-secondary" href="productos.html">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  </section>
+</main>
+<footer class="footer">
+  <div class="shell">
+    <strong>Food Store · Mendoza</strong>
+    <span>Alta de productos · Programación III</span>
+  </div>
+</footer>
+<script type="module" src="js/nuevo-producto.js"></script>
+</body>
+</html>

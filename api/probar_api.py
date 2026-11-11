@@ -217,6 +217,7 @@ def parte_2_categorias():
     http(P, "una categoría dada de baja conserva su nombre: 409",
          client.post(CATEGORIAS, json={"nombre": "Bebidas"}), 409)
 
+
 def parte_3_etiquetas():
     print("\n=== PARTE 3: etiquetas ===")
     P = "P3"

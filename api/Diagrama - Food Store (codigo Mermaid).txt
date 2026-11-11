@@ -1,0 +1,49 @@
+erDiagram
+    CATEGORIA ||--o{ PRODUCTO : tiene
+    PRODUCTO ||--o{ PRODUCTOETIQUETA : lleva
+    ETIQUETA ||--o{ PRODUCTOETIQUETA : marca
+    PEDIDO ||--|{ DETALLEPEDIDO : contiene
+    PRODUCTO ||--o{ DETALLEPEDIDO : aparece_en
+    CATEGORIA {
+        int id PK
+        string nombre UK
+        string descripcion
+        bool activo
+    }
+    ETIQUETA {
+        int id PK
+        string nombre UK
+    }
+    PRODUCTO {
+        int id PK
+        string nombre UK
+        string descripcion
+        float precio
+        int stock
+        string imagen_url
+        int categoria_id FK
+        bool activo
+    }
+    PRODUCTOETIQUETA {
+        int producto_id PK, FK
+        int etiqueta_id PK, FK
+    }
+    PEDIDO {
+        int id PK
+        string cliente_nombre
+        string direccion_entrega
+        string forma_pago
+        string notas
+        string estado
+        float total
+        datetime fecha
+    }
+    DETALLEPEDIDO {
+        int id PK
+        int pedido_id FK
+        int producto_id FK
+        string nombre_producto
+        float precio_unitario
+        int cantidad
+        float subtotal
+    }

@@ -227,10 +227,40 @@ def cargar_datos_de_ejemplo(session):
         ('Helado artesanal', 4600, 13, 3, []),
         ('Chocotorta', 5900, 9, 3, []),
         ('Ensalada de frutas', 4400, 8, 3, [0])]
-    for indice, (n, precio, stock, cat, tags) in enumerate(datos, start=1):
+    imagenes = {
+        'Pizza muzzarella': 'img/pizza-margherita.webp',
+        'Pizza napolitana': 'img/pizza-napolitana.webp',
+        'Pizza fugazzeta': 'img/pizza-cuatro-quesos.webp',
+        'Pizza especial': 'img/pizza-cuatro-quesos.webp',
+        'Hamburguesa clásica': 'img/hamburguesa-clasica.webp',
+        'Hamburguesa doble': 'img/hamburguesa-doble.webp',
+        'Hamburguesa veggie': 'img/hamburguesa-veggie.webp',
+        'Hamburguesa picante': 'img/hamburguesa-doble.webp',
+        'Agua mineral': 'img/bebidas-artesanales.webp',
+        'Gaseosa cola': 'img/bebidas-artesanales.webp',
+        'Flan casero': 'img/postres-cremosos.webp',
+        'Brownie': 'img/postres-chocolate.webp',
+        'Pizza cuatro quesos': 'img/pizza-cuatro-quesos.webp',
+        'Pizza calabresa': 'img/pizza-napolitana.webp',
+        'Pizza de rúcula': 'img/pizza-rucula.webp',
+        'Pizza margarita': 'img/pizza-margherita.webp',
+        'Hamburguesa BBQ': 'img/hamburguesa-doble.webp',
+        'Hamburguesa cheddar': 'img/hamburguesa-doble.webp',
+        'Hamburguesa criolla': 'img/hamburguesa-clasica.webp',
+        'Hamburguesa con panceta': 'img/hamburguesa-doble.webp',
+        'Limonada casera': 'img/bebidas-artesanales.webp',
+        'Jugo de naranja': 'img/bebidas-artesanales.webp',
+        'Agua con gas': 'img/bebidas-artesanales.webp',
+        'Té frío': 'img/bebidas-artesanales.webp',
+        'Cheesecake': 'img/postres-cremosos.webp',
+        'Helado artesanal': 'img/postres-chocolate.webp',
+        'Chocotorta': 'img/postres-chocolate.webp',
+        'Ensalada de frutas': 'img/postres-cremosos.webp',
+    }
+    for n, precio, stock, cat, tags in datos:
         p = Producto(nombre=n, descripcion=f'Elaboración propia: {n.lower()}', precio=precio,
                      stock=stock, categoria_id=categorias_seed[cat].id,
-                     imagen_url=f'img/producto-{indice}.svg')
+                     imagen_url=imagenes.get(n))
         p.etiquetas = [etiquetas_seed[i] for i in tags]
         session.add(p)
     session.commit()

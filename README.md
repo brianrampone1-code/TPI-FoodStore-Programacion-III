@@ -37,7 +37,7 @@ Abrir:
 - Tabla de administración con paginado real por `skip` y `limit`.
 - **Formulario de alta en página independiente** con `POST /productos/` y validaciones HTML, JavaScript y servidor (409, 404 y 422).
 - Después de un alta exitosa, redirección con el ID y recarga de la lista desde la API.
-- Imágenes gourmet locales optimizadas en **WebP** dentro de `web/img/`. Los 28 productos iniciales tienen asociada una fotografía; algunas variantes comparten imagen. Las fotos del repositorio provienen de Unsplash y son distintas de las imágenes generadas para el ZIP local.
+- Imágenes individuales optimizadas en **WebP** dentro de `web/img/`: cada uno de los 28 productos iniciales tiene un archivo de foto propio, seleccionado por el contenido del producto (por ejemplo, el jugo de naranja tiene una foto de jugo). Se obtienen mediante el script `scripts/fotos_por_producto.py`; el archivo `FOTOS_CREDITOS.md` documenta procedencia y licencia.
 - Interfaz responsive, módulos JavaScript y textos creados mediante `textContent`.
 
 ## Si ya habías ejecutado una versión anterior
@@ -70,4 +70,4 @@ GitHub Pages publica sitios estáticos pero no ejecuta una API Python ni una bas
 
 ## Créditos de imágenes
 
-Fotografías gastronómicas de [Unsplash](https://unsplash.com), descargadas y optimizadas para el proyecto mediante `scripts/descargar_imagenes.py`.
+Fotografías obtenidas mediante [Openverse](https://openverse.org/) bajo licencias abiertas. Consultá `FOTOS_CREDITOS.md` para autores, procedencia y licencias individuales.

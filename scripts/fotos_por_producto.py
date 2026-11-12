@@ -29,9 +29,9 @@ HEADERS = {
 PRODUCTOS = [
     ("Pizza muzzarella", "pizza-muzzarella.webp", "mozzarella cheese pizza"),
     ("Pizza napolitana", "pizza-napolitana.webp", "neapolitan pizza tomato slices"),
-    ("Pizza fugazzeta", "pizza-fugazzeta.webp", "onion cheese pizza fugazzeta"),
+    ("Pizza fugazzeta", "pizza-fugazzeta.webp", "onion pizza"),
     ("Pizza especial", "pizza-especial.webp", "ham red pepper olive pizza"),
-    ("Hamburguesa clásica", "hamburguesa-clasica.webp", "classic beef cheeseburger lettuce tomato"),
+    ("Hamburguesa clásica", "hamburguesa-clasica.webp", "cheeseburger"),
     ("Hamburguesa doble", "hamburguesa-doble.webp", "double beef cheeseburger"),
     ("Hamburguesa veggie", "hamburguesa-veggie.webp", "vegetarian veggie burger"),
     ("Hamburguesa picante", "hamburguesa-picante.webp", "spicy jalapeno burger"),
@@ -52,7 +52,7 @@ PRODUCTOS = [
     ("Agua con gas", "agua-con-gas.webp", "sparkling water glass bubbles"),
     ("Té frío", "te-frio.webp", "iced tea glass lemon"),
     ("Cheesecake", "cheesecake.webp", "cheesecake slice berry dessert"),
-    ("Helado artesanal", "helado-artesanal.webp", "artisan gelato ice cream scoops"),
+    ("Helado artesanal", "helado-artesanal.webp", "ice cream"),
     ("Chocotorta", "chocotorta.webp", "chocolate layered biscuit cake dessert"),
     ("Ensalada de frutas", "ensalada-frutas.webp", "fresh fruit salad bowl"),
 ]

@@ -31,5 +31,6 @@ jobs:
           git add web/img/*.webp FOTOS_CREDITOS.md
           if ! git diff --cached --quiet; then
             git commit -m "Agregar 28 fotos específicas según producto"
+            git pull --rebase origin main
             git push
           fi

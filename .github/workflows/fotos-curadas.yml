@@ -1,0 +1,33 @@
+name: Ajuste final de imágenes gourmet
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/fotos_curadas.py
+      - .github/workflows/fotos-curadas.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mejorar-fotos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install Pillow
+      - name: Descargar las 4 fotografías corregidas
+        run: python scripts/fotos_curadas.py
+      - name: Publicar las fotos y sus atribuciones
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/img FOTOS_CREDITOS.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Corregir fotografías de productos específicos"
+            git pull --rebase origin main
+            git push
+          fi

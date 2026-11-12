@@ -37,7 +37,7 @@ Abrir:
 - Tabla de administración con paginado real por `skip` y `limit`.
 - **Formulario de alta en página independiente** con `POST /productos/` y validaciones HTML, JavaScript y servidor (409, 404 y 422).
 - Después de un alta exitosa, redirección con el ID y recarga de la lista desde la API.
-- Imágenes individuales optimizadas en **WebP** dentro de `web/img/`: cada uno de los 28 productos iniciales tiene un archivo de foto propio, seleccionado por el contenido del producto (por ejemplo, el jugo de naranja tiene una foto de jugo). Se obtienen mediante el script `scripts/fotos_por_producto.py`; el archivo `FOTOS_CREDITOS.md` documenta procedencia y licencia.
+- Las **28 fotos gourmet aprobadas** se recortan del catálogo gráfico original, conservando una estética cálida y consistente. Cada producto tiene un WebP único: `web/img/gourmet-01.webp` a `gourmet-28.webp`.
 - Interfaz responsive, módulos JavaScript y textos creados mediante `textContent`.
 
 ## Si ya habías ejecutado una versión anterior
@@ -70,4 +70,9 @@ GitHub Pages publica sitios estáticos pero no ejecuta una API Python ni una bas
 
 ## Créditos de imágenes
 
-Fotografías obtenidas mediante [Openverse](https://openverse.org/) bajo licencias abiertas. Consultá `FOTOS_CREDITOS.md` para autores, procedencia y licencias individuales.
+Las nuevas fotos provienen del catálogo gourmet original generado y aprobado en esta conversación. El archivo comprimido de origen se guarda en `assets/catalogo_gourmet_aprobado.avif` y se recorta con `scripts/recortar_catalogo_aprobado.py`.
+
+### Orden y actualización de imágenes
+El catálogo muestra las secciones **Pizzas → Hamburguesas → Bebidas → Postres**. 
+Si ya tenés una base de datos creada, sin borrarla, ejecutá desde `api/`: `py actualizar_imagenes.py`. 
+Ese script conserva precios, stock, pedidos y productos nuevos.

@@ -1,0 +1,38 @@
+name: Publicar fotos gourmet aprobadas
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - assets/catalogo_gourmet_aprobado.avif
+      - scripts/recortar_catalogo_aprobado.py
+      - .github/workflows/fotos-aprobadas.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar Pillow
+        run: python -m pip install Pillow
+      - name: Recortar las 28 imágenes del catálogo aprobado
+        run: python scripts/recortar_catalogo_aprobado.py
+      - name: Guardar las imágenes individuales en GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/img/gourmet-*.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Publicar 28 imágenes exactas del catálogo gourmet aprobado"
+            git pull --rebase origin main
+            git push origin main
+          fi

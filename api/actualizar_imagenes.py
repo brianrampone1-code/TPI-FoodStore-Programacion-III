@@ -1,45 +1,39 @@
-"""Actualiza imágenes de los productos existentes sin borrar la base de datos.
-
-Ejecutar desde la carpeta api/ con:
-    py actualizar_imagenes.py
-
-No cambia nombres, precios ni stock. Solo actualiza imagen_url de los 28
-productos iniciales, si se encuentran por nombre. Conserva productos creados
-manualmente y no interviene en las 128 pruebas de API.
+"""Actualiza imágenes gourmet en una base existente sin borrar información.
+Ejecutar desde api/: py actualizar_imagenes.py
 """
 from sqlmodel import Session, select
 from database import engine, crear_tablas
 from models import Producto
 
 IMAGENES = {
-    'Pizza muzzarella': 'img/pizza-muzzarella.webp',
-    'Pizza napolitana': 'img/pizza-napolitana.webp',
-    'Pizza fugazzeta': 'img/pizza-fugazzeta.webp',
-    'Pizza especial': 'img/pizza-especial.webp',
-    'Hamburguesa clásica': 'img/hamburguesa-clasica.webp',
-    'Hamburguesa doble': 'img/hamburguesa-doble.webp',
-    'Hamburguesa veggie': 'img/hamburguesa-veggie.webp',
-    'Hamburguesa picante': 'img/hamburguesa-picante.webp',
-    'Agua mineral': 'img/agua-mineral.webp',
-    'Gaseosa cola': 'img/gaseosa-cola.webp',
-    'Flan casero': 'img/flan-casero.webp',
-    'Brownie': 'img/brownie.webp',
-    'Pizza cuatro quesos': 'img/pizza-cuatro-quesos.webp',
-    'Pizza calabresa': 'img/pizza-calabresa.webp',
-    'Pizza de rúcula': 'img/pizza-rucula.webp',
-    'Pizza margarita': 'img/pizza-margarita.webp',
-    'Hamburguesa BBQ': 'img/hamburguesa-bbq.webp',
-    'Hamburguesa cheddar': 'img/hamburguesa-cheddar.webp',
-    'Hamburguesa criolla': 'img/hamburguesa-criolla.webp',
-    'Hamburguesa con panceta': 'img/hamburguesa-panceta.webp',
-    'Limonada casera': 'img/limonada-casera.webp',
-    'Jugo de naranja': 'img/jugo-naranja.webp',
-    'Agua con gas': 'img/agua-con-gas.webp',
-    'Té frío': 'img/te-frio.webp',
-    'Cheesecake': 'img/cheesecake.webp',
-    'Helado artesanal': 'img/helado-artesanal.webp',
-    'Chocotorta': 'img/chocotorta.webp',
-    'Ensalada de frutas': 'img/ensalada-frutas.webp',
+    'Pizza muzzarella': 'img/gourmet-01.webp',
+    'Pizza napolitana': 'img/gourmet-02.webp',
+    'Pizza fugazzeta': 'img/gourmet-03.webp',
+    'Pizza especial': 'img/gourmet-04.webp',
+    'Pizza cuatro quesos': 'img/gourmet-05.webp',
+    'Pizza calabresa': 'img/gourmet-06.webp',
+    'Pizza de rúcula': 'img/gourmet-07.webp',
+    'Pizza margarita': 'img/gourmet-08.webp',
+    'Hamburguesa clásica': 'img/gourmet-09.webp',
+    'Hamburguesa doble': 'img/gourmet-10.webp',
+    'Hamburguesa veggie': 'img/gourmet-11.webp',
+    'Hamburguesa picante': 'img/gourmet-12.webp',
+    'Hamburguesa BBQ': 'img/gourmet-13.webp',
+    'Hamburguesa cheddar': 'img/gourmet-14.webp',
+    'Hamburguesa criolla': 'img/gourmet-15.webp',
+    'Hamburguesa con panceta': 'img/gourmet-16.webp',
+    'Agua mineral': 'img/gourmet-17.webp',
+    'Gaseosa cola': 'img/gourmet-18.webp',
+    'Limonada casera': 'img/gourmet-19.webp',
+    'Jugo de naranja': 'img/gourmet-20.webp',
+    'Agua con gas': 'img/gourmet-21.webp',
+    'Té frío': 'img/gourmet-22.webp',
+    'Flan casero': 'img/gourmet-23.webp',
+    'Brownie': 'img/gourmet-24.webp',
+    'Cheesecake': 'img/gourmet-25.webp',
+    'Helado artesanal': 'img/gourmet-26.webp',
+    'Chocotorta': 'img/gourmet-27.webp',
+    'Ensalada de frutas': 'img/gourmet-28.webp',
 }
 
 def main():

@@ -24,19 +24,47 @@ function tarjeta(producto) {
   linea.append(texto('span', producto.stock > 0 ? 'stock' : 'stock empty', producto.stock > 0 ? `${producto.stock} disponibles` : 'Sin stock'));
   body.append(linea); articulo.append(body); return articulo;
 }
+const ORDEN_CATEGORIAS = ['Pizzas', 'Hamburguesas', 'Bebidas', 'Postres'];
+function grupoCategoria(nombre, productos) {
+  const seccion = document.createElement('section');
+  seccion.className = 'grupo-menu';
+  const cabecera = document.createElement('div');
+  cabecera.className = 'grupo-cabecera';
+  const titulo = texto('h3', 'grupo-titulo', nombre);
+  cabecera.append(titulo, texto('span', 'grupo-cantidad', `${productos.length} variedades`));
+  const grilla = document.createElement('div');
+  grilla.className = 'grid-products';
+  for (const producto of productos) grilla.append(tarjeta(producto));
+  seccion.append(cabecera, grilla);
+  return seccion;
+}
 async function cargarCatalogo() {
   const solicitud = ++idSolicitud;
   contenedor.replaceChildren(); contador.textContent = '';
   aviso(estado, 'Cargando productos…');
   try {
-    const datos = await obtenerProductos({ categoriaId: categoriaSeleccionada, skip:0, limit:50 });
+    const datos = await obtenerProductos({ categoriaId: categoriaSeleccionada, skip: 0, limit: 50 });
     if (solicitud !== idSolicitud) return;
     estado.replaceChildren();
     contador.textContent = `${datos.total} productos`;
-    if (!datos.items.length) aviso(estado, 'No hay productos en esta categoría.');
-    const frag = document.createDocumentFragment();
-    datos.items.forEach(p => frag.append(tarjeta(p)));
-    contenedor.append(frag);
+    if (!datos.items.length) {
+      aviso(estado, 'No hay productos en esta categoría.');
+      return;
+    }
+    const grupos = new Map();
+    for (const producto of datos.items) {
+      const nombre = producto.categoria?.nombre || 'Otros';
+      if (!grupos.has(nombre)) grupos.set(nombre, []);
+      grupos.get(nombre).push(producto);
+    }
+    const nombres = [...grupos.keys()].sort((a, b) => {
+      const indiceA = ORDEN_CATEGORIAS.indexOf(a);
+      const indiceB = ORDEN_CATEGORIAS.indexOf(b);
+      return (indiceA < 0 ? 100 : indiceA) - (indiceB < 0 ? 100 : indiceB) || a.localeCompare(b, 'es');
+    });
+    const fragmento = document.createDocumentFragment();
+    for (const nombre of nombres) fragmento.append(grupoCategoria(nombre, grupos.get(nombre)));
+    contenedor.append(fragmento);
   } catch (error) {
     if (solicitud !== idSolicitud) return;
     aviso(estado, mensajeError(error), 'error', cargarCatalogo);

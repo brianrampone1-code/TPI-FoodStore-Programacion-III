@@ -1,0 +1,32 @@
+name: Restaurar fotos gourmet originales
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/restaurar_imagenes_aprobadas.py
+      - .github/workflows/restaurar-gourmet.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  originales:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar Pillow con soporte AVIF
+        run: python -m pip install Pillow pillow-avif-plugin
+      - name: Recortar y mejorar exclusivamente las imágenes aprobadas
+        run: python scripts/restaurar_imagenes_aprobadas.py
+      - name: Subir las 28 imágenes a GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/img/gourmet-*.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Restaurar fotos gourmet originales, sin cambiar productos"
+            git pull --rebase origin main
+            git push
+          fi

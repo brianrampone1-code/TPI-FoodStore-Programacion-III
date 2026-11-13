@@ -46,7 +46,10 @@ def main():
         imagenes = pagina.locator("article.product img")
         expect(imagenes).to_have_count(28)
         for foto in imagenes.all():
-            assert foto.evaluate("(img) => img.complete && img.naturalWidth >= 800"), foto.get_attribute("src")
+            # Las imágenes usan loading='lazy': una foto fuera de pantalla
+            # todavía no se descarga hasta que el navegador la necesite.
+            ancho = foto.evaluate("(img) => { img.loading = 'eager'; return img.decode().then(() => img.naturalWidth); }")
+            assert ancho >= 800, foto.get_attribute("src")
         assert "Explorá nuestras especialidades. Productos frescos" not in pagina.locator("body").inner_text()
         print("[OK] Catálogo de 28 tarjetas con fotos nítidas", flush=True)
 

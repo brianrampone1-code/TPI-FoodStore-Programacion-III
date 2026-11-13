@@ -21,3 +21,7 @@
 .hero:after{border-color:#bd8156}
 .hero .pill{background:#eac899;color:#4b261b}
 @media(max-width:730px){.grupo-menu{padding:15px}.grupo-cabecera{flex-wrap:wrap}}
+
+/* Fotos originales aprobadas: no estirarlas ni rellenar con zoom. */
+.grupo-menu .product .media{height:auto;aspect-ratio:2 / 1;overflow:hidden;background:#e9d9c5}
+.grupo-menu .product .media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;image-rendering:auto}

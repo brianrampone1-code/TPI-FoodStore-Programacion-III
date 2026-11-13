@@ -99,7 +99,8 @@ def main():
         pagina.locator("#nombre").fill(codigo)
         pagina.locator("#descripcion").fill("Creado automáticamente desde la web")
         pagina.locator("#guardar").click()
-        expect(pagina).to_have_url(re.compile(r"productos\.html\?creado="), timeout=15000)
+        # El aviso lee ?creado= y luego history.replaceState lo quita de la URL.
+        expect(pagina).to_have_url(re.compile(r"/productos\.html$"), timeout=15000)
         expect(pagina.locator("#estado-accion")).to_contain_text("creado correctamente", timeout=15000)
         expect(pagina.locator("#total-productos")).to_have_text("29")
         pagina.goto("http://localhost:5500/", wait_until="networkidle")

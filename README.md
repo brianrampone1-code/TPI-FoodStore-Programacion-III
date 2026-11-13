@@ -37,7 +37,7 @@ Abrir:
 - Tabla de administración con paginado real por `skip` y `limit`.
 - **Formulario de alta en página independiente** con `POST /productos/` y validaciones HTML, JavaScript y servidor (409, 404 y 422).
 - Después de un alta exitosa, redirección con el ID y recarga de la lista desde la API.
-- Las **28 fotos gourmet aprobadas** se recortan del catálogo gráfico original, conservando una estética cálida y consistente. Cada producto tiene un WebP único: `web/img/gourmet-01.webp` a `gourmet-28.webp`.
+- Las **28 fotos gourmet nítidas** se generan desde fotografías individuales seleccionadas para cada producto (no desde recortes ampliados del mosaico). Comparten encuadre **960 × 720**, corrección de color cálida y formato WebP de **menos de 200 KB**. La API mantiene las rutas `web/img/gourmet-01.webp` a `gourmet-28.webp`, de modo que no cambia el contrato ni hace falta modificar la base.
 - Interfaz responsive, módulos JavaScript y textos creados mediante `textContent`.
 
 ## Si ya habías ejecutado una versión anterior
@@ -50,7 +50,7 @@ py actualizar_imagenes.py
 
 Después recargá el catálogo con **Ctrl + F5**. Si descargás el proyecto de cero, la API inicializa automáticamente los 28 productos con las fotos nuevas.
 
-## Pruebas y entrega
+## Pruebas y entrega\n\nLa verificación integral se ejecuta en GitHub Actions (`.github/workflows/pruebas-integrales.yml`): incluye los 128 casos de la API, sintaxis, navegación en Chromium, tarjetas, imágenes, filtros remotos, tabla paginada, validaciones, alta de un producto de prueba y vista móvil.\n
 
 La suite original `api/probar_api.py` permanece en el repositorio. **Resultado confirmado: 128/128 pruebas superadas** en GitHub Actions, con Python 3.11 y dependencias de `api/requirements.txt`. El workflow está en `.github/workflows/tests.yml`.
 
@@ -70,7 +70,7 @@ GitHub Pages publica sitios estáticos pero no ejecuta una API Python ni una bas
 
 ## Créditos de imágenes
 
-Las nuevas fotos provienen del catálogo gourmet original generado y aprobado en esta conversación. El archivo comprimido de origen se guarda en `assets/catalogo_gourmet_aprobado.avif` y se recorta con `scripts/recortar_catalogo_aprobado.py`.
+Las 28 fotos finales provienen de imágenes individuales del catálogo con atribuciones registradas en `FOTOS_CREDITOS.md`, y se optimizan mediante `scripts/mejorar_nitidez_gourmet.py`. Se conservan los materiales de diseño anteriores por referencia, pero **no se usan los recortes borrosos** en la versión actual.
 
 ### Orden y actualización de imágenes
 El catálogo muestra las secciones **Pizzas → Hamburguesas → Bebidas → Postres**. 

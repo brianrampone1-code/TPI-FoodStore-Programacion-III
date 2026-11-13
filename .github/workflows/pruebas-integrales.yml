@@ -1,0 +1,52 @@
+name: Verificación integral TPI Food Store
+on:
+  push:
+    branches: [main]
+    paths:
+      - web/**
+      - api/**
+      - scripts/pruebas_web.py
+      - .github/workflows/pruebas-integrales.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar-tpi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar API y Playwright
+        run: |
+          python -m pip install -r api/requirements.txt
+          python -m pip install playwright pillow
+          python -m playwright install --with-deps chromium
+      - name: Verificar sintaxis
+        run: |
+          python -m compileall -q api scripts
+          for archivo in web/js/*.js; do node --check "$archivo" || exit 1; done
+      - name: Verificar las 128 pruebas del Parcial 2
+        run: |
+          cd api
+          python probar_api.py
+      - name: Encender API de prueba y web
+        run: |
+          cd api
+          DATABASE_URL=sqlite:///./tpi_smoke.db python -m uvicorn main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
+          cd ..
+          python -m http.server 5500 --bind 127.0.0.1 --directory web > /tmp/web.log 2>&1 &
+          sleep 5
+      - name: Probar desde navegador real
+        run: python scripts/pruebas_web.py
+      - name: Guardar logs si falla
+        if: failure()
+        run: |
+          cat /tmp/api.log || true
+          cat /tmp/web.log || true
